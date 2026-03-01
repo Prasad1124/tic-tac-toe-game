@@ -16,44 +16,18 @@ const winConditions = [
     [0,4,8], [2,4,6]
 ];
 
-cells.forEach(cell => cell.addEventListener("click", cellClicked));
+cells.forEach(cell => cell.addEventListener("click", playerMove));
 restartBtn.addEventListener("click", restartGame);
 
-function cellClicked() {
+function playerMove() {
     const index = this.getAttribute("data-index");
 
     if(board[index] !== "" || !running) return;
 
-    board[index] = currentPlayer;
-    this.textContent = currentPlayer;
+    board[index] = "X";
+    this.textContent = "X";
 
-    checkWinner();
-}
-
-function checkWinner() {
-    let roundWon = false;
-
-    for(let i = 0; i < winConditions.length; i++) {
-        const [a,b,c] = winConditions[i];
-        if(board[a] && board[a] === board[b] && board[a] === board[c]) {
-            roundWon = true;
-            break;
-        }
-    }
-
-    if(roundWon) {
-        statusText.textContent = `Player ${currentPlayer} Wins!`;
-        running = false;
-
-        if(currentPlayer === "X") {
-            xScore++;
-            scoreX.textContent = xScore;
-        } else {
-            oScore++;
-            scoreO.textContent = oScore;
-        }
-        return;
-    }
+    if(checkWinner("X")) return;
 
     if(!board.includes("")) {
         statusText.textContent = "Draw!";
@@ -61,14 +35,46 @@ function checkWinner() {
         return;
     }
 
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    statusText.textContent = `Player ${currentPlayer}'s Turn`;
+    computerMove();
+}
+
+function computerMove() {
+    let emptyCells = board
+        .map((val, idx) => val === "" ? idx : null)
+        .filter(val => val !== null);
+
+    let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+
+    board[randomIndex] = "O";
+    cells[randomIndex].textContent = "O";
+
+    checkWinner("O");
+}
+
+function checkWinner(player) {
+    for(let condition of winConditions) {
+        const [a,b,c] = condition;
+
+        if(board[a] === player && board[b] === player && board[c] === player) {
+            statusText.textContent = `Player ${player} Wins!`;
+            running = false;
+
+            if(player === "X") {
+                xScore++;
+                scoreX.textContent = xScore;
+            } else {
+                oScore++;
+                scoreO.textContent = oScore;
+            }
+            return true;
+        }
+    }
+    return false;
 }
 
 function restartGame() {
     board = ["", "", "", "", "", "", "", "", ""];
     running = true;
-    currentPlayer = "X";
-    statusText.textContent = `Player ${currentPlayer}'s Turn`;
+    statusText.textContent = "Player X's Turn";
     cells.forEach(cell => cell.textContent = "");
 }

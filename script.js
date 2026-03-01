@@ -3,8 +3,8 @@ const statusText = document.getElementById("status");
 const restartBtn = document.getElementById("restart");
 const scoreX = document.getElementById("scoreX");
 const scoreO = document.getElementById("scoreO");
+const difficultySelect = document.getElementById("difficulty");
 
-let currentPlayer = "X";
 let board = ["", "", "", "", "", "", "", "", ""];
 let running = true;
 let xScore = 0;
@@ -24,39 +24,72 @@ function playerMove() {
 
     if(board[index] !== "" || !running) return;
 
-    board[index] = "X";
-    this.textContent = "X";
+    makeMove(index, "X");
 
-    if(checkWinner("X")) return;
+    if(checkGameOver("X")) return;
 
-    if(!board.includes("")) {
-        statusText.textContent = "Draw!";
-        running = false;
-        return;
-    }
-
-    computerMove();
+    setTimeout(computerMove, 500);
 }
 
 function computerMove() {
-    let emptyCells = board
-        .map((val, idx) => val === "" ? idx : null)
-        .filter(val => val !== null);
+    if(!running) return;
 
-    let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    let difficulty = difficultySelect.value;
+    let move;
 
-    board[randomIndex] = "O";
-    cells[randomIndex].textContent = "O";
+    if(difficulty === "hard") {
+        move = findBestMove();
+    } else {
+        move = randomMove();
+    }
 
-    checkWinner("O");
+    makeMove(move, "O");
+    checkGameOver("O");
 }
 
-function checkWinner(player) {
+function makeMove(index, player) {
+    board[index] = player;
+    cells[index].textContent = player;
+}
+
+function randomMove() {
+    let emptyCells = board
+        .map((value, index) => value === "" ? index : null)
+        .filter(value => value !== null);
+
+    return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+}
+
+function findBestMove() {
+    // Try to win
+    for(let condition of winConditions) {
+        let [a,b,c] = condition;
+        let values = [board[a], board[b], board[c]];
+
+        if(values.filter(v => v === "O").length === 2 && values.includes("")) {
+            return condition[values.indexOf("")];
+        }
+    }
+
+    // Block player
+    for(let condition of winConditions) {
+        let [a,b,c] = condition;
+        let values = [board[a], board[b], board[c]];
+
+        if(values.filter(v => v === "X").length === 2 && values.includes("")) {
+            return condition[values.indexOf("")];
+        }
+    }
+
+    return randomMove();
+}
+
+function checkGameOver(player) {
     for(let condition of winConditions) {
         const [a,b,c] = condition;
 
         if(board[a] === player && board[b] === player && board[c] === player) {
-            statusText.textContent = `Player ${player} Wins!`;
+            statusText.textContent = `${player} Wins!`;
             running = false;
 
             if(player === "X") {
@@ -69,6 +102,13 @@ function checkWinner(player) {
             return true;
         }
     }
+
+    if(!board.includes("")) {
+        statusText.textContent = "Draw!";
+        running = false;
+        return true;
+    }
+
     return false;
 }
 
